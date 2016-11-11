@@ -1,4 +1,4 @@
-namespace ConsoleApplication
+namespace QueryTest
 {
     public class Sale
     {
