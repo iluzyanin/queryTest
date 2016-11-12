@@ -1,4 +1,6 @@
+using AutoMapper;
 using Dapper;
+using FluentAssertions;
 using Microsoft.Data.Sqlite;
 using NUnit.Framework;
 using System;
@@ -19,6 +21,8 @@ namespace QueryTest
         [SetUp]
         public void SetUp()
         {
+            Mapper.Initialize(cfg => { });
+
             this.salesmen = new List<Salesman>
             {
                 new Salesman { Id = 1, FirstName = "Tony", LastName = "Stark" },
@@ -47,35 +51,30 @@ namespace QueryTest
         public void When_executing_AllSalesmen_query_Should_return_all_salesmen()
         {
             // Arrange
-            var allSalesmenQuery = File.ReadAllText(@"Queries\AllSalesmen.sql");
+            var allSalesmenQuery = File.ReadAllText(@"Queries/AllSalesmen.sql");
 
             // Act
-            var allSalesmen = connection.Query(allSalesmenQuery).ToList();
+            var allSalesmanRows = connection.Query(allSalesmenQuery).ToList();
+            IList<Salesman> allSalesmen = Mapper.Map<IList<Salesman>>(allSalesmanRows);
 
             // Assert
-            Assert.AreEqual(allSalesmen.Count, 3);
-            var firstSalesman = allSalesmen[0];
-            Assert.AreEqual(firstSalesman.Id, 1);
-            Assert.AreEqual(firstSalesman.FirstName, "Tony");
-            Assert.AreEqual(firstSalesman.LastName, "Stark");
+            allSalesmen.ShouldBeEquivalentTo(this.salesmen);
         }
 
         [Test]
         public void When_executing_BestSalesmen_query_Should_return_correct_salesmen()
         {
             // Arrange
-            var bestSalesmenQuery = File.ReadAllText(@"Queries\BestSalesmen.sql");
+            var bestSalesmenQuery = File.ReadAllText(@"Queries/BestSalesmen.sql");
+            var expectedBestSalesmen = new List<Salesman> { this.salesmen[0], this.salesmen[1] };
 
             // Act
             var minimumAmount = 500;
-            var bestSalesmen = connection.Query(bestSalesmenQuery, new { amount = minimumAmount }).ToList();
+            var bestSalesmanRows = connection.Query(bestSalesmenQuery, new { amount = minimumAmount }).ToList();
+            IList<Salesman> bestSalesmen = Mapper.Map<IList<Salesman>>(bestSalesmanRows);
 
             // Assert
-            Assert.AreEqual(bestSalesmen.Count, 2);
-            var secondSalesman = bestSalesmen[1];
-            Assert.AreEqual(secondSalesman.Id, 2);
-            Assert.AreEqual(secondSalesman.FirstName, "Peter");
-            Assert.AreEqual(secondSalesman.LastName, "Parker");
+            bestSalesmen.ShouldBeEquivalentTo(expectedBestSalesmen);
         }
 
         private void PrepareDatabase()
