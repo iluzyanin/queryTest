@@ -1,9 +1,7 @@
-using AutoMapper;
 using Dapper;
 using FluentAssertions;
 using Microsoft.Data.Sqlite;
 using NUnit.Framework;
-using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.IO;
@@ -21,8 +19,6 @@ namespace QueryTest
         [SetUp]
         public void SetUp()
         {
-            Mapper.Initialize(cfg => { });
-
             this.salesmen = new List<Salesman>
             {
                 new Salesman { Id = 1, FirstName = "Tony", LastName = "Stark" },
@@ -42,7 +38,7 @@ namespace QueryTest
             };
 
             this.connection = new SqliteConnection("Data Source=:memory:");
-            connection.Open();
+            this.connection.Open();
 
             PrepareDatabase();
         }
@@ -54,8 +50,7 @@ namespace QueryTest
             var allSalesmenQuery = File.ReadAllText(@"Queries/AllSalesmen.sql");
 
             // Act
-            var allSalesmanRows = connection.Query(allSalesmenQuery).ToList();
-            IList<Salesman> allSalesmen = Mapper.Map<IList<Salesman>>(allSalesmanRows);
+            var allSalesmen = connection.Query<Salesman>(allSalesmenQuery).ToList();
 
             // Assert
             allSalesmen.ShouldBeEquivalentTo(this.salesmen);
@@ -70,8 +65,7 @@ namespace QueryTest
 
             // Act
             var minimumAmount = 500;
-            var bestSalesmanRows = connection.Query(bestSalesmenQuery, new { amount = minimumAmount }).ToList();
-            IList<Salesman> bestSalesmen = Mapper.Map<IList<Salesman>>(bestSalesmanRows);
+            var bestSalesmen = connection.Query<Salesman>(bestSalesmenQuery, new { amount = minimumAmount }).ToList();
 
             // Assert
             bestSalesmen.ShouldBeEquivalentTo(expectedBestSalesmen);
